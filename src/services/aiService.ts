@@ -1,141 +1,105 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import { UserProfile, WeeklyPlan, SessionLog } from "../types";
+import { WeeklyPlan, SessionLog, WorkoutDay, UserProfile } from "../types";
+import { addDays } from "date-fns";
 
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+// We use GROQ for plan generation as the key is provided in the environment
+const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
 
 export async function generateWorkoutPlan(
   profile: UserProfile,
-  weekNumber: number,
   previousLogs: SessionLog[] = [],
-  previousPlan?: WeeklyPlan
 ): Promise<WeeklyPlan> {
-  const model = "gemini-3.1-pro-preview";
-  
-  const lastWeekCompletion = previousLogs.length > 0 
-    ? previousLogs.reduce((acc, log) => acc + log.session_completion_pct, 0) / previousLogs.length 
-    : 0;
+  const completedSessions = previousLogs.filter(l => l.completed).length;
+  const completionRate = previousLogs.length > 0 ? completedSessions / previousLogs.length : 1;
 
   const prompt = `
     You are an expert personal trainer and sports scientist.
-    Generate a structured weekly workout plan for the following user:
+    Generate a structural fitness training plan for the following user:
     ${JSON.stringify({
+      name: profile.name,
       goal: profile.goal,
       level: profile.level,
       days_per_week: profile.days_per_week,
-      weight_kg: profile.weight_kg,
-      height_cm: profile.height_cm,
       injuries: profile.injuries,
       available_equipment: profile.available_equipment,
-      week_number: weekNumber,
-      last_week_completion_pct: lastWeekCompletion,
+      completion_rate: completionRate,
     })}
 
     Constraints:
     - If injuries are present, avoid exercises that strain those areas.
     - If equipment is limited, only use available equipment.
-    - Adapt the plan based on last week's completion percentage (${lastWeekCompletion}%).
-    - If completion was > 85%, increase difficulty slightly.
-    - If completion was < 60%, decrease difficulty.
-    - Provide 7 days of schedule, marking rest days as is_rest_day: true.
     - Return ONLY a JSON object matching the WeeklyPlan interface.
+    - Focus on high-intensity drills and recovery intervals.
+
+    Interface:
+    interface WeeklyPlan {
+      title: string;
+      description: string;
+      sessions: {
+        day: string;
+        session_type: string;
+        is_rest_day: boolean;
+        exercises: { name: string; sets: number; reps: string; }[];
+      }[];
+    }
   `;
 
   try {
-    const response = await genAI.models.generateContent({
-      model,
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            week_number: { type: Type.NUMBER },
-            generated_at: { type: Type.STRING },
-            goal_snapshot: { type: Type.STRING },
-            level_snapshot: { type: Type.STRING },
-            adaptation_notes: { type: Type.STRING },
-            next_week_hint: { type: Type.STRING },
-            version: { type: Type.NUMBER },
-            days: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  day: { type: Type.STRING },
-                  session_type: { type: Type.STRING },
-                  is_rest_day: { type: Type.BOOLEAN },
-                  estimated_duration_mins: { type: Type.NUMBER },
-                  estimated_calories: { type: Type.NUMBER },
-                  exercises: {
-                    type: Type.ARRAY,
-                    items: {
-                      type: Type.OBJECT,
-                      properties: {
-                        name: { type: Type.STRING },
-                        sets: { type: Type.NUMBER },
-                        reps: { type: Type.STRING },
-                        rest_seconds: { type: Type.NUMBER },
-                        muscle_group: { type: Type.STRING },
-                        difficulty: { type: Type.NUMBER },
-                        calories_per_set_approx: { type: Type.NUMBER },
-                        form_tip: { type: Type.STRING },
-                      },
-                      required: ["name", "sets", "reps", "rest_seconds", "muscle_group", "difficulty", "calories_per_set_approx", "form_tip"]
-                    }
-                  }
-                },
-                required: ["day", "session_type", "exercises", "estimated_duration_mins", "estimated_calories"]
-              }
-            }
-          },
-          required: ["week_number", "generated_at", "goal_snapshot", "level_snapshot", "days", "adaptation_notes", "next_week_hint", "version"]
-        }
-      }
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          { role: "system", content: "You are a fitness expert. Output JSON only." },
+          { role: "user", content: prompt }
+        ],
+        response_format: { type: "json_object" }
+      })
     });
 
-    const result = JSON.parse(response.text || "{}");
-    return result as WeeklyPlan;
+    const data = await response.json();
+    const result = JSON.parse(data.choices[0].message.content);
+    
+    return {
+      ...result,
+      id: crypto.randomUUID(),
+      user_id: profile.id,
+      start_date: new Date().toISOString(),
+      end_date: addDays(new Date(), 7).toISOString(),
+    } as WeeklyPlan;
   } catch (error) {
     console.error("AI Plan Generation Error:", error);
-    // Fallback logic if AI fails
-    return createFallbackPlan(profile, weekNumber);
+    return createFallbackPlan(profile);
   }
 }
 
-function createFallbackPlan(profile: UserProfile, weekNumber: number): WeeklyPlan {
-  // Simple rule-based fallback
+function createFallbackPlan(profile: UserProfile): WeeklyPlan {
   const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  const workoutDays = days.map((day, index) => {
-    const isRest = index % 2 !== 0;
+  const sessions: WorkoutDay[] = days.map((day, index) => {
+    // Distribute workouts based on days_per_week
+    const isRest = index >= (profile.days_per_week || 3);
     return {
       day,
-      session_type: isRest ? "Rest" : "General Fitness",
+      session_type: isRest ? "Rest & Recovery" : "Luminous Drill",
       is_rest_day: isRest,
-      estimated_duration_mins: isRest ? 0 : 45,
-      estimated_calories: isRest ? 0 : 300,
       exercises: isRest ? [] : [
-        {
-          name: "Push Ups",
-          sets: 3,
-          reps: "10-12",
-          rest_seconds: 60,
-          muscle_group: "Chest",
-          difficulty: 3,
-          calories_per_set_approx: 10,
-          form_tip: "Keep your back straight"
-        }
+        { name: "Push Ups", sets: 3, reps: "12-15" },
+        { name: "Plank Hold", sets: 3, reps: "45s" },
+        { name: "Squats", sets: 3, reps: "15" }
       ]
     };
   });
 
   return {
-    week_number: weekNumber,
-    generated_at: new Date().toISOString(),
-    goal_snapshot: profile.goal,
-    level_snapshot: profile.level,
-    days: workoutDays,
-    adaptation_notes: "Generated using fallback logic due to connection issues.",
-    next_week_hint: "Keep it up!",
-    version: 1
+    id: crypto.randomUUID(),
+    user_id: profile.id,
+    title: "Baseline Sync V1",
+    description: "Reliable fallback trajectory while the AI recalibrates.",
+    sessions,
+    start_date: new Date().toISOString(),
+    end_date: addDays(new Date(), 7).toISOString(),
   };
 }

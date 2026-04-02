@@ -20,57 +20,43 @@ export interface Exercise {
   name: string;
   sets: number;
   reps: string;
-  rest_seconds: number;
-  muscle_group: string;
-  difficulty: number;
-  calories_per_set_approx: number;
-  form_tip: string;
-  met_value?: number;
+  rest_seconds?: number;
+  muscle_group?: string;
+  difficulty?: number;
 }
 
 export interface WorkoutDay {
   day: string;
   session_type: string;
   exercises: Exercise[];
-  estimated_duration_mins: number;
-  estimated_calories: number;
   is_rest_day?: boolean;
 }
 
 export interface WeeklyPlan {
-  week_number: number;
-  generated_at: string;
-  goal_snapshot: FitnessGoal;
-  level_snapshot: FitnessLevel;
-  days: WorkoutDay[];
-  adaptation_notes: string;
-  next_week_hint: string;
-  version: number;
-}
-
-export interface ExerciseLog {
-  name: string;
-  planned_sets: number;
-  completed_sets: number;
-  reps_per_set: number[];
-  weight_kg: number | null;
-  notes: string | null;
-  skipped: boolean;
+  id: string;
+  user_id: string;
+  title: string;
+  description: string;
+  sessions: WorkoutDay[];
+  start_date: string;
+  end_date: string;
 }
 
 export interface SessionLog {
   id: string;
-  week_number: number;
-  day_name: string;
-  started_at: string;
-  completed_at: string | null;
-  exercises: ExerciseLog[];
-  session_completion_pct: number;
+  user_id: string;
+  type: string;
+  duration_mins: number;
   calories_burned: number;
+  intensity: 'low' | 'medium' | 'high' | 'extreme';
+  timestamp: string;
+  completed: boolean;
+  notes: string;
 }
 
 export interface AppState {
   profile: UserProfile | null;
-  weeklyPlans: WeeklyPlan[];
-  sessionLogs: SessionLog[];
+  sessions: SessionLog[];
+  currentPlan: WeeklyPlan | null;
+  loading: boolean;
 }

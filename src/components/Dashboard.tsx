@@ -25,6 +25,7 @@ import {
 import { generateWorkoutPlan } from '../services/aiService';
 import { WeeklyPlan, SessionLog, WorkoutDay } from '../types';
 import { ExerciseAnimation } from './ExerciseAnimation';
+import { GuidedTour } from './GuidedTour';
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { 
   LineChart, 
@@ -178,14 +179,14 @@ export const Dashboard: React.FC = () => {
     <div className="flex min-h-screen bg-slate-50/30 relative overflow-x-hidden">
       {/* Sidebar for Desktop */}
       <aside className="hidden lg:flex w-64 bg-white border-r border-slate-100 flex-col py-10 px-6 fixed inset-y-0 left-0 z-40">
-        <div className="flex items-center gap-3 mb-12 px-2">
+        <div id="tour-welcome" className="flex items-center gap-3 mb-12 px-2">
           <div className="w-10 h-10 gradient-bg rounded-[1.25rem] flex items-center justify-center text-white shadow-lg shadow-brand-primary/20">
             <Activity size={24} strokeWidth={2.5} />
           </div>
           <span className="font-black text-xl tracking-tighter text-slate-900 uppercase italic">Lumina</span>
         </div>
 
-        <nav className="flex-1 space-y-1.5">
+        <nav id="tour-nav" className="flex-1 space-y-1.5">
           <NavItem active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={<LayoutDashboard size={18} strokeWidth={2.5} />} label="My Progress" />
           <NavItem active={activeTab === 'plan'} onClick={() => setActiveTab('plan')} icon={<Calendar size={18} strokeWidth={2.5} />} label="Training Plan" />
           <NavItem active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} icon={<UserIcon size={18} strokeWidth={2.5} />} label="Body Profile" />
@@ -230,7 +231,7 @@ export const Dashboard: React.FC = () => {
                     <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase italic leading-none">Daily Stats</h2>
                     <span className="hidden sm:inline-block text-[9px] font-black text-slate-400 uppercase tracking-widest">Tracking Active</span>
                   </div>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                  <div id="tour-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     <ActivitySummaryCard icon={<Flame size={18} className="text-orange-500" />} label="Calories" value={sessions.reduce((acc, l) => acc + (l.calories_burned || 0), 0).toString()} unit="kcal" colorClass="bg-orange-50/50" />
                     <ActivitySummaryCard icon={<Timer size={18} className="text-blue-500" />} label="Duration" value={sessions.reduce((acc, l) => acc + (l.duration_mins || 0), 0).toString()} unit="min" colorClass="bg-blue-50/50" />
                     <ActivitySummaryCard icon={<Footprints size={18} className="text-emerald-500" />} label="Steps" value="8,4k" unit="" colorClass="bg-emerald-50/50" />
@@ -240,7 +241,7 @@ export const Dashboard: React.FC = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-10">
                   {/* Performance Matrix */}
-                  <div className="lg:col-span-2 premium-card p-6 sm:p-10 bg-white relative overflow-hidden group">
+                  <div id="tour-performance" className="lg:col-span-2 premium-card p-6 sm:p-10 bg-white relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/5 blur-[80px] rounded-full group-hover:scale-150 transition-transform duration-1000" />
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 relative z-10">
                       <div>
@@ -277,7 +278,7 @@ export const Dashboard: React.FC = () => {
 
                   <div className="space-y-8 sm:space-y-10">
                     {/* Rewards Card */}
-                    <div className="premium-card p-6 sm:p-8 bg-white">
+                    <div id="tour-achievements" className="premium-card p-6 sm:p-8 bg-white">
                       <h3 className="font-black text-lg text-slate-900 tracking-tight uppercase italic mb-6 leading-none">Achievements</h3>
                       <div className="bg-luminous-lavender rounded-3xl p-6 sm:p-7 border border-brand-primary/10 mb-6 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-125 transition-transform duration-700 pointer-events-none"><Trophy size={60} /></div>
@@ -342,7 +343,7 @@ export const Dashboard: React.FC = () => {
                       <h2 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight uppercase italic leading-none mb-2">Training Timeline</h2>
                       <p className="text-slate-400 font-bold text-[10px] sm:text-xs uppercase tracking-[0.2em]">Active Blueprint • {currentPlan?.title || 'Initial Path'}</p>
                     </div>
-                    <button onClick={handleGeneratePlan} disabled={isGenerating} className="w-full sm:w-auto px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] italic shadow-xl shadow-slate-900/10 hover:bg-brand-primary transition-all">
+                    <button id="tour-generate-btn" onClick={handleGeneratePlan} disabled={isGenerating} className="w-full sm:w-auto px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] italic shadow-xl shadow-slate-900/10 hover:bg-brand-primary transition-all">
                        {isGenerating ? "Synthesizing..." : "Generate AI Plan"}
                     </button>
                  </div>
@@ -469,6 +470,8 @@ export const Dashboard: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <GuidedTour />
     </div>
   );
 };

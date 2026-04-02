@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../AppContext';
 import { FitnessGoal, FitnessLevel, UserProfile } from '../types';
-import { motion } from 'motion/react';
-import { ArrowRight, User, Target, Activity, ShieldAlert } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { ArrowRight, User, Target, Activity, ShieldAlert, Sparkles, ChevronLeft } from 'lucide-react';
 
 export const Onboarding: React.FC = () => {
   const { setProfile } = useApp();
@@ -32,6 +32,10 @@ export const Onboarding: React.FC = () => {
     }
   };
 
+  const handleBack = () => {
+    if (step > 1) setStep(step - 1);
+  };
+
   const updateField = (field: keyof UserProfile, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -46,159 +50,201 @@ export const Onboarding: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50 relative overflow-hidden">
+      {/* Decorative Background Elements */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-brand-primary/5 blur-[120px] rounded-full animate-float" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-brand-secondary/5 blur-[120px] rounded-full animate-float" style={{ animationDelay: '1.5s' }} />
+
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full glass-card p-8"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="max-w-xl w-full premium-card p-1 shadow-2xl relative z-10"
       >
-        <div className="mb-8">
-          <div className="flex justify-between mb-4">
-            {[1, 2, 3, 4].map(i => (
-              <div 
-                key={i} 
-                className={`h-1 w-full mx-1 rounded-full ${i <= step ? 'bg-brand-primary' : 'bg-slate-200'}`}
-              />
-            ))}
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            {step === 1 && "Welcome! Let's get started"}
-            {step === 2 && "What's your goal?"}
-            {step === 3 && "Your fitness level"}
-            {step === 4 && "Final details"}
-          </h1>
-          <p className="text-slate-500">We'll personalize your experience based on your profile.</p>
-        </div>
-
-        <div className="space-y-6">
-          {step === 1 && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
-                <input 
-                  type="text" 
-                  value={formData.name}
-                  onChange={e => updateField('name', e.target.value)}
-                  className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-primary outline-none"
-                  placeholder="Enter your name"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Age</label>
-                  <input 
-                    type="number" 
-                    value={formData.age}
-                    onChange={e => updateField('age', parseInt(e.target.value))}
-                    className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-primary outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Weight (kg)</label>
-                  <input 
-                    type="number" 
-                    value={formData.weight_kg}
-                    onChange={e => updateField('weight_kg', parseInt(e.target.value))}
-                    className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-primary outline-none"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Height (cm)</label>
-                <input 
-                  type="number" 
-                  value={formData.height_cm}
-                  onChange={e => updateField('height_cm', parseInt(e.target.value))}
-                  className="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-primary outline-none"
-                />
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="grid grid-cols-1 gap-3">
-              {(['weight_loss', 'muscle_gain', 'endurance', 'flexibility'] as FitnessGoal[]).map(goal => (
-                <button
-                  key={goal}
-                  onClick={() => updateField('goal', goal)}
-                  className={`p-4 rounded-2xl border-2 text-left transition-all ${formData.goal === goal ? 'border-brand-primary bg-brand-primary/5' : 'border-slate-100 hover:border-slate-200'}`}
-                >
-                  <span className="block font-bold capitalize">{goal.replace('_', ' ')}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="grid grid-cols-1 gap-3">
-              {(['beginner', 'intermediate', 'advanced'] as FitnessLevel[]).map(level => (
-                <button
-                  key={level}
-                  onClick={() => updateField('level', level)}
-                  className={`p-4 rounded-2xl border-2 text-left transition-all ${formData.level === level ? 'border-brand-primary bg-brand-primary/5' : 'border-slate-100 hover:border-slate-200'}`}
-                >
-                  <span className="block font-bold capitalize">{level}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {step === 4 && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Available Equipment</label>
-                <div className="flex flex-wrap gap-2">
-                  {['Dumbbells', 'Barbell', 'Bench', 'Resistance Bands', 'None'].map(eq => (
-                    <button
-                      key={eq}
-                      onClick={() => toggleItem('available_equipment', eq)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${formData.available_equipment?.includes(eq) ? 'bg-brand-primary text-white' : 'bg-slate-100 text-slate-600'}`}
-                    >
-                      {eq}
+        <div className="bg-white rounded-[1.95rem] p-10 lg:p-14">
+            <div className="mb-12">
+              <div className="flex justify-between items-center mb-10">
+                 {step > 1 ? (
+                    <button onClick={handleBack} className="p-2 hover:bg-slate-50 rounded-full transition-colors text-slate-400">
+                       <ChevronLeft size={24} />
                     </button>
-                  ))}
-                </div>
+                 ) : <div className="w-10" />}
+                 
+                 <div className="flex gap-2">
+                    {[1, 2, 3, 4].map(i => (
+                      <div 
+                        key={i} 
+                        className={`h-2 transition-all duration-500 rounded-full ${i === step ? 'w-8 bg-brand-primary' : 'w-2 bg-slate-100'}`}
+                      />
+                    ))}
+                 </div>
+                 
+                 <div className="w-10" />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Injuries / Pain Areas</label>
-                <div className="flex flex-wrap gap-2">
-                  {['Knee', 'Lower Back', 'Shoulder', 'Wrist', 'None'].map(inj => (
-                    <button
-                      key={inj}
-                      onClick={() => toggleItem('injuries', inj)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${formData.injuries?.includes(inj) ? 'bg-brand-accent text-white' : 'bg-slate-100 text-slate-600'}`}
-                    >
-                      {inj}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Days per week</label>
-                <input 
-                  type="range" 
-                  min="2" max="6" 
-                  value={formData.days_per_week}
-                  onChange={e => updateField('days_per_week', parseInt(e.target.value))}
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-primary"
-                />
-                <div className="flex justify-between text-xs text-slate-500 mt-1">
-                  <span>2 days</span>
-                  <span>{formData.days_per_week} days</span>
-                  <span>6 days</span>
-                </div>
+
+              <div className="text-center">
+                 <div className="w-16 h-16 bg-luminous-lavender rounded-3xl flex items-center justify-center text-brand-primary mx-auto mb-6 shadow-sm">
+                    <Sparkles size={32} />
+                 </div>
+                 <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-4 italic uppercase">
+                    {step === 1 && "Initialization"}
+                    {step === 2 && "Primary Objective"}
+                    {step === 3 && "Operational Level"}
+                    {step === 4 && "Final Synchronization"}
+                 </h1>
+                 <p className="text-slate-500 font-medium text-lg">
+                    {step === 1 && "Start your luminous wellness journey."}
+                    {step === 2 && "Select your core fitness destination."}
+                    {step === 3 && "Assess your current tactical readiness."}
+                    {step === 4 && "Configure final parameters for processing."}
+                 </p>
               </div>
             </div>
-          )}
 
-          <button
-            onClick={handleNext}
-            disabled={step === 1 && !formData.name}
-            className="w-full py-4 gradient-bg text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-brand-primary/20 hover:opacity-90 transition-opacity disabled:opacity-50"
-          >
-            {step === 4 ? "Create My Plan" : "Next Step"}
-            <ArrowRight size={20} />
-          </button>
+            <div className="space-y-10 min-h-[320px]">
+              <AnimatePresence mode="wait">
+                 <motion.div
+                   key={step}
+                   initial={{ opacity: 0, x: 20 }}
+                   animate={{ opacity: 1, x: 0 }}
+                   exit={{ opacity: 0, x: -20 }}
+                   transition={{ duration: 0.3 }}
+                 >
+                    {step === 1 && (
+                      <div className="space-y-6">
+                        <div className="group">
+                          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3 ml-2 group-focus-within:text-brand-primary transition-colors">Identification</label>
+                          <input 
+                            type="text" 
+                            value={formData.name}
+                            onChange={e => updateField('name', e.target.value)}
+                            className="w-full p-5 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/5 outline-none font-bold text-lg transition-all"
+                            placeholder="Enter your name"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3 ml-2">Chrono Age</label>
+                            <input 
+                              type="number" 
+                              value={formData.age}
+                              onChange={e => updateField('age', parseInt(e.target.value))}
+                              className="w-full p-5 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/5 outline-none font-bold text-lg transition-all"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3 ml-2">Mass Index (kg)</label>
+                            <input 
+                              type="number" 
+                              value={formData.weight_kg}
+                              onChange={e => updateField('weight_kg', parseInt(e.target.value))}
+                              className="w-full p-5 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/5 outline-none font-bold text-lg transition-all"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3 ml-2">Alt Vertical (cm)</label>
+                          <input 
+                            type="number" 
+                            value={formData.height_cm}
+                            onChange={e => updateField('height_cm', parseInt(e.target.value))}
+                            className="w-full p-5 rounded-2xl bg-slate-50 border border-slate-100 focus:bg-white focus:border-brand-primary focus:ring-4 focus:ring-brand-primary/5 outline-none font-bold text-lg transition-all"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {step === 2 && (
+                      <div className="grid grid-cols-1 gap-4">
+                        {(['weight_loss', 'muscle_gain', 'endurance', 'flexibility'] as FitnessGoal[]).map(goal => (
+                          <button
+                            key={goal}
+                            onClick={() => updateField('goal', goal)}
+                            className={`p-6 rounded-3xl border-2 text-left transition-all relative overflow-hidden group ${formData.goal === goal ? 'border-brand-primary bg-brand-primary/5' : 'border-slate-50 hover:border-slate-200 bg-slate-50/50'}`}
+                          >
+                            {formData.goal === goal && <div className="absolute top-0 right-0 p-4"><div className="w-2 h-2 bg-brand-primary rounded-full animate-pulse" /></div>}
+                            <span className="block font-black text-lg uppercase italic tracking-tight text-slate-900">{goal.replace('_', ' ')}</span>
+                            <span className="block text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Strategic Path</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {step === 3 && (
+                      <div className="grid grid-cols-1 gap-4">
+                        {(['beginner', 'intermediate', 'advanced'] as FitnessLevel[]).map(level => (
+                          <button
+                            key={level}
+                            onClick={() => updateField('level', level)}
+                            className={`p-6 rounded-3xl border-2 text-left transition-all relative overflow-hidden group ${formData.level === level ? 'border-brand-primary bg-brand-primary/5' : 'border-slate-50 hover:border-slate-200 bg-slate-50/50'}`}
+                          >
+                            {formData.level === level && <div className="absolute top-0 right-0 p-4"><div className="w-2 h-2 bg-brand-primary rounded-full animate-pulse" /></div>}
+                            <span className="block font-black text-lg uppercase italic tracking-tight text-slate-900">{level} level</span>
+                            <span className="block text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Operational Capacity</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {step === 4 && (
+                      <div className="space-y-8">
+                        <div>
+                          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4 ml-2">Available Arsenal</label>
+                          <div className="flex flex-wrap gap-2">
+                            {['Dumbbells', 'Barbell', 'Bench', 'Resistance Bands', 'None'].map(eq => (
+                              <button
+                                key={eq}
+                                onClick={() => toggleItem('available_equipment', eq)}
+                                className={`px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${formData.available_equipment?.includes(eq) ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                              >
+                                {eq}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-4 ml-2">Known Structural Vulnerabilities</label>
+                          <div className="flex flex-wrap gap-2">
+                            {['Knee', 'Lower Back', 'Shoulder', 'Wrist', 'None'].map(inj => (
+                              <button
+                                key={inj}
+                                onClick={() => toggleItem('injuries', inj)}
+                                className={`px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${formData.injuries?.includes(inj) ? 'bg-rose-500 text-white shadow-xl shadow-rose-500/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                              >
+                                {inj}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="pt-4">
+                          <div className="flex justify-between items-center mb-4 ml-2">
+                             <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Temporal Allocation</label>
+                             <span className="text-sm font-black text-brand-primary uppercase italic">{formData.days_per_week} Cycles / Week</span>
+                          </div>
+                          <input 
+                            type="range" 
+                            min="2" max="6" 
+                            value={formData.days_per_week}
+                            onChange={e => updateField('days_per_week', parseInt(e.target.value))}
+                            className="w-full h-3 bg-slate-100 rounded-full appearance-none cursor-pointer accent-brand-primary"
+                          />
+                        </div>
+                      </div>
+                    )}
+                 </motion.div>
+              </AnimatePresence>
+            </div>
+
+            <div className="mt-14">
+              <button
+                onClick={handleNext}
+                disabled={step === 1 && !formData.name}
+                className="w-full py-6 gradient-bg text-white rounded-[2rem] font-black text-lg uppercase tracking-[0.2em] italic flex items-center justify-center gap-4 shadow-2xl shadow-brand-primary/30 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+              >
+                {step === 4 ? "Synchronize Now" : "Execute Next Phase"}
+                <ArrowRight size={24} strokeWidth={3} />
+              </button>
+              <p className="text-center text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mt-6">Secure Luminous Protocol v1.4.2</p>
+            </div>
         </div>
       </motion.div>
     </div>
